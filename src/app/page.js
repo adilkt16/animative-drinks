@@ -3,6 +3,7 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import Lenis from "lenis";
 import styles from "./page.module.css";
 import BottleScene from "./BottleScene";
 
@@ -219,6 +220,117 @@ export default function Home() {
   const videoSectionRef = useRef(null);
   const videoFrameRef = useRef(null);
   const productSectionRef = useRef(null);
+  const bigTypeRef = useRef(null);
+  const cursorRef = useRef(null);
+  const cursorDotRef = useRef(null);
+
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return undefined;
+    }
+
+    gsap.registerPlugin(ScrollTrigger);
+
+    const lenis = new Lenis({
+      lerp: 0.12,
+      smoothWheel: true,
+      smoothTouch: false,
+    });
+
+    lenis.on("scroll", ScrollTrigger.update);
+
+    let rafId = 0;
+    const raf = (time) => {
+      lenis.raf(time);
+      rafId = window.requestAnimationFrame(raf);
+    };
+    rafId = window.requestAnimationFrame(raf);
+
+    ScrollTrigger.refresh();
+
+    return () => {
+      window.cancelAnimationFrame(rafId);
+      lenis.destroy();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return undefined;
+    }
+
+    const cursor = cursorRef.current;
+    const cursorDot = cursorDotRef.current;
+
+    if (!cursor || !cursorDot) {
+      return undefined;
+    }
+
+    gsap.set([cursor, cursorDot], { x: window.innerWidth / 2, y: window.innerHeight / 2, opacity: 0 });
+
+    const moveX = gsap.quickTo(cursor, "x", { duration: 0.35, ease: "power3" });
+    const moveY = gsap.quickTo(cursor, "y", { duration: 0.35, ease: "power3" });
+    const dotX = gsap.quickTo(cursorDot, "x", { duration: 0.12, ease: "power3" });
+    const dotY = gsap.quickTo(cursorDot, "y", { duration: 0.12, ease: "power3" });
+
+    let isVisible = false;
+    let isHovering = false;
+
+    const setHover = (active) => {
+      if (isHovering === active) return;
+      isHovering = active;
+      gsap.to(cursor, { scale: active ? 1.8 : 1, duration: 0.2, ease: "power2.out" });
+      gsap.to(cursorDot, { scale: active ? 0.4 : 1, opacity: active ? 0.35 : 0.9, duration: 0.2, ease: "power2.out" });
+    };
+
+    const handleMove = (event) => {
+      moveX(event.clientX);
+      moveY(event.clientY);
+      dotX(event.clientX);
+      dotY(event.clientY);
+
+      if (!isVisible) {
+        isVisible = true;
+        gsap.to([cursor, cursorDot], { opacity: 1, duration: 0.2 });
+      }
+    };
+
+    const handleLeave = () => {
+      isVisible = false;
+      gsap.to([cursor, cursorDot], { opacity: 0, duration: 0.2 });
+    };
+
+    const handlePointerOver = (event) => {
+      const interactive = event.target.closest(
+        "a, button, [role='button'], input, select, textarea, label"
+      );
+      if (interactive) {
+        setHover(true);
+      }
+    };
+
+    const handlePointerOut = (event) => {
+      const related = event.relatedTarget;
+      const stillInteractive = related && related.closest && related.closest(
+        "a, button, [role='button'], input, select, textarea, label"
+      );
+      if (!stillInteractive) {
+        setHover(false);
+      }
+    };
+
+    window.addEventListener("pointermove", handleMove, { passive: true });
+    window.addEventListener("pointerleave", handleLeave);
+    document.addEventListener("pointerover", handlePointerOver, true);
+    document.addEventListener("pointerout", handlePointerOut, true);
+
+    return () => {
+      window.removeEventListener("pointermove", handleMove);
+      window.removeEventListener("pointerleave", handleLeave);
+      document.removeEventListener("pointerover", handlePointerOver, true);
+      document.removeEventListener("pointerout", handlePointerOut, true);
+    };
+  }, []);
 
   useLayoutEffect(() => {
     if (!containerRef.current) {
@@ -233,7 +345,89 @@ export default function Home() {
 
     document.body.classList.add("has-gsap");
 
+    const splitCleanups = [];
+
+    const splitText = (element, mode) => {
+      if (!element || element.dataset.splitDone === "true") return null;
+
+      const original = element.textContent || "";
+      const words = original.split(" ").filter(Boolean);
+
+      element.dataset.splitDone = "true";
+      element.dataset.splitOriginal = original;
+      element.setAttribute("aria-label", original);
+      element.textContent = "";
+
+      const fragment = document.createDocumentFragment();
+
+      words.forEach((word, index) => {
+        const wordSpan = document.createElement("span");
+        wordSpan.classList.add(styles.splitWord);
+        wordSpan.setAttribute("aria-hidden", "true");
+
+        if (mode === "words") {
+          wordSpan.textContent = word;
+        } else {
+          Array.from(word).forEach((char) => {
+            const charSpan = document.createElement("span");
+            charSpan.classList.add(styles.splitChar);
+            charSpan.setAttribute("aria-hidden", "true");
+            charSpan.textContent = char;
+            wordSpan.appendChild(charSpan);
+          });
+        }
+
+        fragment.appendChild(wordSpan);
+
+        if (index < words.length - 1) {
+          fragment.appendChild(document.createTextNode(" "));
+        }
+      });
+
+      element.appendChild(fragment);
+
+      return () => {
+        element.textContent = original;
+        element.removeAttribute("aria-label");
+        delete element.dataset.splitDone;
+        delete element.dataset.splitOriginal;
+      };
+    };
+
     const ctx = gsap.context(() => {
+      const splitTargets = gsap.utils.toArray(
+        "[data-split]",
+        containerRef.current
+      );
+
+      splitTargets.forEach((element) => {
+        const mode = element.dataset.split || "chars";
+        const cleanup = splitText(element, mode);
+        if (cleanup) splitCleanups.push(cleanup);
+
+        const targets = mode === "words"
+          ? element.querySelectorAll(`.${styles.splitWord}`)
+          : element.querySelectorAll(`.${styles.splitChar}`);
+
+        if (!targets.length) return;
+
+        gsap.set(targets, { yPercent: 120, opacity: 0 });
+
+        gsap.to(targets, {
+          yPercent: 0,
+          opacity: 1,
+          duration: 0.75,
+          ease: "power3.out",
+          stagger: mode === "words" ? 0.08 : 0.02,
+          scrollTrigger: {
+            trigger: element,
+            start: "top 85%",
+            toggleActions: "play none none none",
+            once: true,
+          },
+        });
+      });
+
       if (storyImageRef.current && storyRef.current) {
         gsap.fromTo(
           storyImageRef.current,
@@ -306,10 +500,38 @@ export default function Home() {
           ease: "sine.inOut",
         });
       });
+
+      if (bigTypeRef.current) {
+        const track = bigTypeRef.current.querySelector(
+          `.${styles.marqueeTrack}`
+        );
+        if (track) {
+          const ticker = gsap.to(track, {
+            xPercent: -50,
+            ease: "none",
+            duration: 18,
+            repeat: -1,
+          });
+
+          ScrollTrigger.create({
+            trigger: bigTypeRef.current,
+            start: "top bottom",
+            end: "bottom top",
+            onUpdate: (self) => {
+              const velocity = Math.abs(self.getVelocity());
+              const scale = gsap.utils.clamp(0.6, 2.2, 1 + velocity / 2000);
+              ticker.timeScale(scale);
+            },
+            onLeave: () => ticker.timeScale(1),
+            onEnterBack: () => ticker.timeScale(1),
+          });
+        }
+      }
     }, containerRef);
 
     return () => {
       document.body.classList.remove("has-gsap");
+      splitCleanups.forEach((cleanup) => cleanup());
       ctx.revert();
     };
   }, []);
@@ -337,6 +559,8 @@ export default function Home() {
 
   return (
     <div className={styles.page} ref={containerRef}>
+      <div className={styles.cursor} ref={cursorRef} aria-hidden="true" />
+      <div className={styles.cursorDot} ref={cursorDotRef} aria-hidden="true" />
       <div className={styles.globalBubbles} aria-hidden="true">
         <BubbleField bubbles={globalBubbles} className={styles.bubblesGlobal} />
       </div>
@@ -372,8 +596,8 @@ export default function Home() {
             <div className={styles.heroType} data-reveal>
               <p className={styles.heroTag}>Thirtysix hours of fresh.</p>
               <h1 className={styles.heroTitleLarge}>
-                <span>LA BURBUJA</span>
-                <span>IBERICA</span>
+                <span data-split="chars">LA BURBUJA</span>
+                <span data-split="chars">IBERICA</span>
               </h1>
               <a className={styles.heroCta} href="#flavors">
                 Discover our drinks
@@ -386,7 +610,7 @@ export default function Home() {
         <section className={styles.story} id="story" ref={storyRef}>
           <div className={styles.storyText} data-reveal>
             <p className={styles.eyebrow}>The 36-hour promise</p>
-            <h2>Freshness that stays loud, longer.</h2>
+            <h2 data-split="words">Freshness that stays loud, longer.</h2>
             <p>
               Thirtysix Hours is designed to stay vibrant long after the first
               squeeze. We cold-press, bottle, and keep it crisp so every sip
@@ -429,7 +653,7 @@ export default function Home() {
           </div>
           <div className={styles.videoCopy} data-reveal>
             <p className={styles.eyebrow}>Moments in motion</p>
-            <h2>Grab a bottle. Make it a ritual.</h2>
+            <h2 data-split="words">Grab a bottle. Make it a ritual.</h2>
             <p>
               From a midday reset to a midnight toast, our juices travel fast.
               The best part is how they disappear before the vibe does.
@@ -444,13 +668,13 @@ export default function Home() {
 
         <section className={styles.bubbleStatement}>
           <BubbleField bubbles={heroBubbles} className={styles.bubblesLight} />
-          <h2>ALL DAY. ALL JUICE.</h2>
+          <h2 data-split="chars">ALL DAY. ALL JUICE.</h2>
         </section>
 
         <section className={styles.centerQuote}>
           <div data-reveal>
             <p className={styles.eyebrow}>Flavor shifts daily</p>
-            <h3>Some days zingy, some days sweet.</h3>
+            <h3 data-split="words">Some days zingy, some days sweet.</h3>
             <p>
               The fruit stays real, the mood changes. That is the magic of
               small-batch juice.
@@ -464,7 +688,7 @@ export default function Home() {
           ref={productSectionRef}
         >
           <div className={styles.sectionHeader} data-reveal>
-            <h2>Three essentials, more in the making.</h2>
+            <h2 data-split="words">Three essentials, more in the making.</h2>
             <p>Choose your lineup or grab all three.</p>
           </div>
           <div className={styles.productGrid}>
@@ -487,14 +711,21 @@ export default function Home() {
           </a>
         </section>
 
-        <section className={styles.bigType}>
-          <p>FRESH. PURE. 36 HOURS.</p>
+        <section className={styles.bigType} ref={bigTypeRef}>
+          <p className={styles.marqueeLabel}>FRESH. PURE. 36 HOURS.</p>
+          <div className={styles.marquee} aria-hidden="true">
+            <div className={styles.marqueeTrack}>
+              <span className={styles.marqueeText}>FRESH. PURE. 36 HOURS.</span>
+              <span className={styles.marqueeText}>FRESH. PURE. 36 HOURS.</span>
+              <span className={styles.marqueeText}>FRESH. PURE. 36 HOURS.</span>
+            </div>
+          </div>
         </section>
 
         <section className={styles.contact} id="contact">
           <div className={styles.contactContent} data-reveal>
             <p className={styles.eyebrow}>Let's plan your order</p>
-            <h2>What are you craving?</h2>
+            <h2 data-split="words">What are you craving?</h2>
             <p>
               Tell us the vibe and we will build the perfect juice drop for you.
             </p>
