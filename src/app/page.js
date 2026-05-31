@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import styles from "./page.module.css";
+import BottleScene from "./BottleScene";
 
 const whatsappLink =
   "https://wa.me/15551234567?text=Hi%20Thirtysix%20Hours%2C%20I%27d%20like%20to%20order%20juice.";
@@ -218,7 +219,6 @@ export default function Home() {
   const videoSectionRef = useRef(null);
   const videoFrameRef = useRef(null);
   const productSectionRef = useRef(null);
-  const rollingBottleRef = useRef(null);
 
   useLayoutEffect(() => {
     if (!containerRef.current) {
@@ -290,32 +290,6 @@ export default function Home() {
         });
       }
 
-      if (rollingBottleRef.current && containerRef.current) {
-        gsap.set(rollingBottleRef.current, {
-          transformOrigin: "center center",
-          xPercent: -50,
-          yPercent: -50,
-          rotation: -12,
-        });
-        gsap.fromTo(
-          rollingBottleRef.current,
-          { x: 0, y: 0, rotation: -12, scale: 1 },
-          {
-            x: -260,
-            y: 260,
-            rotation: 320,
-            scale: 0.9,
-            ease: "none",
-            scrollTrigger: {
-              trigger: containerRef.current,
-              start: "top top",
-              end: "bottom bottom",
-              scrub: true,
-            },
-          }
-        );
-      }
-
       const bubbleNodes = gsap.utils.toArray(
         "[data-bubble]",
         containerRef.current
@@ -366,14 +340,7 @@ export default function Home() {
       <div className={styles.globalBubbles} aria-hidden="true">
         <BubbleField bubbles={globalBubbles} className={styles.bubblesGlobal} />
       </div>
-      <div className={styles.rollingBottleWrap} aria-hidden="true">
-        <img
-          ref={rollingBottleRef}
-          className={styles.rollingBottle}
-          src="/assets/empty.png"
-          alt=""
-        />
-      </div>
+      <BottleScene storyRef={storyRef} />
       <main className={styles.main}>
         <section className={styles.hero} id="start" ref={heroRef}>
           <header className={styles.header}>
