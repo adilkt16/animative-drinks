@@ -6,6 +6,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 import styles from "./page.module.css";
 import BottleScene from "./BottleScene";
+import SectionCurve from "./SectionCurve";
 
 const whatsappLink =
   "https://wa.me/15551234567?text=Hi%20Thirtysix%20Hours%2C%20I%27d%20like%20to%20order%20juice.";
@@ -566,7 +567,7 @@ export default function Home() {
       </div>
       <BottleScene containerRef={containerRef} storyRef={storyRef} />
       <main className={styles.main}>
-        <section className={styles.hero} id="start" ref={heroRef}>
+        <section className={styles.hero} id="start" ref={heroRef} style={{ position: "relative", zIndex: 10 }}>
           <header className={styles.header}>
             <a
               className={styles.social}
@@ -605,9 +606,10 @@ export default function Home() {
             </div>
           </div>
           <div className={styles.scrollHint}>Scroll</div>
+          <SectionCurve fill="#f0423a" />
         </section>
 
-        <section className={styles.story} id="story" ref={storyRef}>
+        <section className={styles.story} id="story" ref={storyRef} style={{ position: "relative", zIndex: 9 }}>
           <div className={styles.storyText} data-reveal>
             <p className={styles.eyebrow}>The 36-hour promise</p>
             <h2 data-split="words">Freshness that stays loud, longer.</h2>
@@ -637,9 +639,10 @@ export default function Home() {
           <div className={styles.storyImage} data-reveal ref={storyImageRef}>
             <img src="/assets/lime.jpg" alt="Lime juice bottle" />
           </div>
+          <SectionCurve fill="var(--cream)" />
         </section>
 
-        <section className={styles.videoSection} ref={videoSectionRef}>
+        <section className={styles.videoSection} ref={videoSectionRef} style={{ position: "relative", zIndex: 8 }}>
           <BubbleField bubbles={coralBubbles} className={styles.bubblesBright} />
           <div className={styles.videoFrame} data-reveal ref={videoFrameRef}>
             <video
@@ -664,14 +667,16 @@ export default function Home() {
               <span>After-hours glow</span>
             </div>
           </div>
+          <SectionCurve fill="#f04a3c" />
         </section>
 
-        <section className={styles.bubbleStatement}>
+        <section className={styles.bubbleStatement} style={{ position: "relative", zIndex: 7 }}>
           <BubbleField bubbles={heroBubbles} className={styles.bubblesLight} />
           <h2 data-split="chars">ALL DAY. ALL JUICE.</h2>
+          <SectionCurve fill="var(--tomato)" />
         </section>
 
-        <section className={styles.centerQuote}>
+        <section className={styles.centerQuote} style={{ position: "relative", zIndex: 6 }}>
           <div data-reveal>
             <p className={styles.eyebrow}>Flavor shifts daily</p>
             <h3 data-split="words">Some days zingy, some days sweet.</h3>
@@ -680,12 +685,14 @@ export default function Home() {
               small-batch juice.
             </p>
           </div>
+          <SectionCurve fill="var(--cream)" />
         </section>
 
         <section
           className={styles.products}
           id="flavors"
           ref={productSectionRef}
+          style={{ position: "relative", zIndex: 5 }}
         >
           <div className={styles.sectionHeader} data-reveal>
             <h2 data-split="words">Three essentials, more in the making.</h2>
@@ -709,9 +716,10 @@ export default function Home() {
           <a className={styles.outlineButton} href={whatsappLink}>
             View all flavors
           </a>
+          <SectionCurve fill="var(--cream)" />
         </section>
 
-        <section className={styles.bigType} ref={bigTypeRef}>
+        <section className={styles.bigType} ref={bigTypeRef} style={{ position: "relative", zIndex: 4 }}>
           <p className={styles.marqueeLabel}>FRESH. PURE. 36 HOURS.</p>
           <div className={styles.marquee} aria-hidden="true">
             <div className={styles.marqueeTrack}>
@@ -720,9 +728,10 @@ export default function Home() {
               <span className={styles.marqueeText}>FRESH. PURE. 36 HOURS.</span>
             </div>
           </div>
+          <SectionCurve fill="#fff" />
         </section>
 
-        <section className={styles.contact} id="contact">
+        <section className={styles.contact} id="contact" style={{ position: "relative", zIndex: 3 }}>
           <div className={styles.contactContent} data-reveal>
             <p className={styles.eyebrow}>Let's plan your order</p>
             <h2 data-split="words">What are you craving?</h2>
@@ -744,10 +753,11 @@ export default function Home() {
               </a>
             </div>
           </div>
+          <SectionCurve fill="var(--cream)" />
         </section>
       </main>
 
-      <footer className={styles.footer}>
+      <footer className={styles.footer} style={{ position: "relative", zIndex: 2 }}>
         <div className={styles.footerGrid}>
           <div className={styles.footerColumn}>
             <h4>Navigate</h4>
