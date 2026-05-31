@@ -564,7 +564,7 @@ export default function Home() {
       <div className={styles.globalBubbles} aria-hidden="true">
         <BubbleField bubbles={globalBubbles} className={styles.bubblesGlobal} />
       </div>
-      <BottleScene storyRef={storyRef} />
+      <BottleScene containerRef={containerRef} storyRef={storyRef} />
       <main className={styles.main}>
         <section className={styles.hero} id="start" ref={heroRef}>
           <header className={styles.header}>

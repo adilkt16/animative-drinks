@@ -26,8 +26,9 @@ const BUBBLE_CONFIGS = [
   { dx: -0.45, size: 12, delay: 0.22, wobble: -20 },
 ];
 
-export default function BottleScene({ storyRef }) {
+export default function BottleScene({ containerRef, storyRef }) {
   const wrapRef = useRef(null);
+  const motionWrapRef = useRef(null);
   const baseImgRef = useRef(null);
   const bodyCanvasRef = useRef(null);
   const capCanvasRef = useRef(null);
@@ -74,11 +75,13 @@ export default function BottleScene({ storyRef }) {
     let ctx;
 
     const setup = () => {
+      const containerEl = containerRef?.current;
       const storyEl = storyRef?.current;
       const wrapEl = wrapRef.current;
+      const motionWrapEl = motionWrapRef.current;
       const capEl = capCanvasRef.current;
 
-      if (!storyEl || !wrapEl || !capEl) {
+      if (!containerEl || !storyEl || !wrapEl || !motionWrapEl || !capEl) {
         rafId = window.requestAnimationFrame(setup);
         return;
       }
@@ -96,6 +99,31 @@ export default function BottleScene({ storyRef }) {
 
       ctx = gsap.context(() => {
         gsap.set(capEl, { y: 0, rotation: 0, opacity: 1, transformOrigin: "50% 100%" });
+        gsap.set(motionWrapEl, {
+          transformOrigin: "50% 50%",
+          x: 0,
+          y: 0,
+          rotation: -12,
+          scale: 1,
+        });
+
+        gsap.fromTo(
+          motionWrapEl,
+          { x: 0, y: 0, rotation: -12, scale: 1 },
+          {
+            x: -260,
+            y: 260,
+            rotation: 320,
+            scale: 0.9,
+            ease: "none",
+            scrollTrigger: {
+              trigger: containerEl,
+              start: "top top",
+              end: "bottom bottom",
+              scrub: true,
+            },
+          }
+        );
 
         bubbleEls.forEach((bubble) => {
           if (bubble) {
@@ -171,43 +199,45 @@ export default function BottleScene({ storyRef }) {
 
   return (
     <div className={styles.scene} ref={wrapRef} aria-hidden="true">
-      <img
-        ref={imgRef}
-        src="/assets/empty.png"
-        alt=""
-        className={styles.sourceImg}
-        onLoad={drawSlices}
-      />
+      <div ref={motionWrapRef} className={styles.motionWrap}>
+        <img
+          ref={imgRef}
+          src="/assets/empty.png"
+          alt=""
+          className={styles.sourceImg}
+          onLoad={drawSlices}
+        />
 
-      <img
-        ref={baseImgRef}
-        src="/assets/empty.png"
-        alt=""
-        className={styles.baseImg}
-      />
+        <img
+          ref={baseImgRef}
+          src="/assets/empty.png"
+          alt=""
+          className={styles.baseImg}
+        />
 
-      <canvas ref={bodyCanvasRef} className={styles.bodyCanvas} />
+        <canvas ref={bodyCanvasRef} className={styles.bodyCanvas} />
 
-      <canvas
-        ref={capCanvasRef}
-        className={styles.capCanvas}
-        style={{ top: `${(CAP_TOP_Y / IMG_H) * 100}%` }}
-      />
+        <canvas
+          ref={capCanvasRef}
+          className={styles.capCanvas}
+          style={{ top: `${(CAP_TOP_Y / IMG_H) * 100}%` }}
+        />
 
-      <div
-        className={styles.bubbleOrigin}
-        style={{ top: `${(CAP_TOP_Y / IMG_H) * 100}%` }}
-      >
-        {BUBBLE_CONFIGS.map((cfg, index) => (
-          <div
-            key={index}
-            ref={(el) => {
-              bubblesRef.current[index] = el;
-            }}
-            className={styles.bubble}
-            style={{ width: cfg.size, height: cfg.size }}
-          />
-        ))}
+        <div
+          className={styles.bubbleOrigin}
+          style={{ top: `${(CAP_TOP_Y / IMG_H) * 100}%` }}
+        >
+          {BUBBLE_CONFIGS.map((cfg, index) => (
+            <div
+              key={index}
+              ref={(el) => {
+                bubblesRef.current[index] = el;
+              }}
+              className={styles.bubble}
+              style={{ width: cfg.size, height: cfg.size }}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );

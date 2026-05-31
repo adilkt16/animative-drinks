@@ -9,6 +9,13 @@
   isolation: isolate;
 }
 
+.motionWrap {
+  position: relative;
+  width: 100%;
+  transform-origin: center center;
+  will-change: transform;
+}
+
 .baseImg {
   display: block;
   width: 100%;
