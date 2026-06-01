@@ -193,11 +193,31 @@ const globalBubbles = [
 ];
 
 function BubbleField({ bubbles, className }) {
+  // choose extras based on area/section type
+  const extrasFor = className && className.includes("bubblesGlobal") ? 18 : className && className.includes("heroBubbles") ? 12 : className && className.includes("bubblesBright") ? 10 : 8;
+
+  const makeExtra = (i, seedOffset = 0) => {
+    const rand = (min, max) => Math.round(min + (Math.abs(Math.sin(i + seedOffset)) * 1000 % 1) * (max - min));
+    const size = `${rand(10, 52)}px`;
+    const left = `${rand(2, 96)}%`;
+    const top = `${rand(40, 96)}%`; // start lower so they rise into view
+    const duration = `${(rand(6, 14) + Math.random()).toFixed(2)}s`;
+    const delay = `${(rand(0, 6) * 0.1).toFixed(2)}s`;
+    const opacity = (rand(40, 90) / 100).toFixed(2);
+    return { size, left, top, duration, delay, opacity };
+  };
+
+  // create combined list: original bubbles then generated extras
+  const combined = [...bubbles];
+  for (let i = 0; i < extrasFor; i += 1) {
+    combined.push(makeExtra(i, bubbles.length));
+  }
+
   return (
     <div className={`${styles.bubbleField} ${className || ""}`.trim()}>
-      {bubbles.map((bubble, index) => (
+      {combined.map((bubble, index) => (
         <span
-          key={index}
+          key={`bubble-${index}`}
           data-bubble
           style={{
             "--size": bubble.size,
@@ -206,6 +226,8 @@ function BubbleField({ bubbles, className }) {
             "--duration": bubble.duration,
             "--delay": bubble.delay,
             "--opacity": bubble.opacity,
+            "--drift": bubble.drift || `${(index % 2 === 0 ? 1 : -1) * (12 + (index % 5) * 4)}px`,
+            "--travel": bubble.travel || `${132 + (index % 4) * 12}vh`,
           }}
         />
       ))}
@@ -490,16 +512,40 @@ export default function Home() {
         containerRef.current
       );
       bubbleNodes.forEach((bubble) => {
-        gsap.to(bubble, {
-          x: gsap.utils.random(-24, 24, 1),
-          y: gsap.utils.random(-36, 36, 1),
-          scale: gsap.utils.random(0.95, 1.08, 0.01),
-          duration: gsap.utils.random(6, 12, 0.1),
-          delay: gsap.utils.random(0, 1.6, 0.1),
-          repeat: -1,
-          yoyo: true,
-          ease: "sine.inOut",
+        const bubbleHeight = bubble.getBoundingClientRect().height || 20;
+        const startY = window.innerHeight + bubbleHeight + gsap.utils.random(24, window.innerHeight * 0.18);
+        const endY = -(window.innerHeight * gsap.utils.random(0.95, 1.45)) - bubbleHeight;
+
+        // give an immediate visible baseline so bubbles don't appear to "load" slowly
+        gsap.set(bubble, {
+          x: gsap.utils.random(-18, 18),
+          y: startY - gsap.utils.random(16, 96),
+          scale: gsap.utils.random(0.72, 0.9),
+          opacity: gsap.utils.random(0.5, 0.78),
         });
+
+        gsap.fromTo(
+          bubble,
+          {
+            x: gsap.utils.random(-20, 20),
+            y: startY,
+            scale: gsap.utils.random(0.65, 0.88),
+            opacity: 0,
+          },
+          {
+            x: gsap.utils.random(-72, 72),
+            y: endY,
+            scale: gsap.utils.random(0.92, 1.14),
+            opacity: gsap.utils.random(0.45, 0.85),
+            duration: gsap.utils.random(8, 14, 0.1),
+            // reduce max initial delay so motion starts quickly
+            delay: gsap.utils.random(0, 0.9, 0.1),
+            repeat: -1,
+            repeatDelay: gsap.utils.random(0.05, 0.9, 0.1),
+            repeatRefresh: true,
+            ease: "none",
+          }
+        );
       });
 
       if (bigTypeRef.current) {
@@ -639,6 +685,7 @@ export default function Home() {
           <div className={styles.storyImage} data-reveal ref={storyImageRef}>
             <img src="/assets/lime.jpg" alt="Lime juice bottle" />
           </div>
+          <BubbleField bubbles={globalBubbles} className={styles.bubblesAccent} />
           <SectionCurve fill="var(--cream)" />
         </section>
 
@@ -685,6 +732,7 @@ export default function Home() {
               small-batch juice.
             </p>
           </div>
+          <BubbleField bubbles={globalBubbles} className={styles.bubblesAccent} />
           <SectionCurve fill="var(--cream)" />
         </section>
 
@@ -694,6 +742,7 @@ export default function Home() {
           ref={productSectionRef}
           style={{ position: "relative", zIndex: 5 }}
         >
+          <BubbleField bubbles={globalBubbles} className={styles.bubblesAccent} />
           <div className={styles.sectionHeader} data-reveal>
             <h2 data-split="words">Three essentials, more in the making.</h2>
             <p>Choose your lineup or grab all three.</p>

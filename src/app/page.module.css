@@ -667,22 +667,32 @@
   left: var(--left);
   top: var(--top);
   border-radius: 999px;
-  border: 2px solid var(--bubble-color, rgba(255, 255, 255, 0.7));
+  border: 2.5px solid var(--bubble-color, rgba(255, 255, 255, 0.9));
   background: radial-gradient(
     circle at 30% 30%,
-    rgba(255, 255, 255, 0.6),
-    rgba(255, 255, 255, 0.1) 40%,
-    transparent 70%
+    rgba(255, 255, 255, 0.85),
+    rgba(255, 255, 255, 0.18) 36%,
+    rgba(255, 255, 255, 0.06) 62%,
+    transparent 82%
   );
   opacity: var(--opacity);
-  animation: float var(--duration) ease-in-out infinite;
+  transform: translate3d(0, 0, 0);
+  animation: sodaRise var(--duration) linear infinite;
   animation-delay: var(--delay);
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+  animation-fill-mode: both;
+  box-shadow: 0 6px 30px rgba(255, 255, 255, 0.28), 0 0 40px rgba(255, 255, 255, 0.06) inset;
   will-change: transform;
 }
 
 :global(.has-gsap) .bubbleField span {
   animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bubbleField span {
+    animation: none;
+    transform: translate3d(0, 0, 0);
+  }
 }
 
 @keyframes fadeInUp {
@@ -754,15 +764,26 @@
   --bubble-color: rgba(255, 255, 255, 0.5);
 }
 
-@keyframes float {
+/* Accent bubbles for light/cream sections — use tomato tone for contrast */
+.bubblesAccent {
+  --bubble-color: var(--tomato, rgba(240, 74, 60, 0.92));
+}
+
+@keyframes sodaRise {
   0% {
-    transform: translateY(0) scale(1);
+    opacity: 0;
+    transform: translate3d(0, var(--travel), 0) scale(0.72);
   }
-  50% {
-    transform: translateY(-12px) scale(1.05);
+  12% {
+    opacity: var(--opacity);
+  }
+  55% {
+    opacity: var(--opacity);
+    transform: translate3d(calc(var(--drift) * 0.7), calc(var(--travel) * 0.16), 0) scale(1.02);
   }
   100% {
-    transform: translateY(0) scale(1);
+    opacity: 0;
+    transform: translate3d(calc(var(--drift) * -0.4), calc(var(--travel) * -1), 0) scale(0.82);
   }
 }
 
